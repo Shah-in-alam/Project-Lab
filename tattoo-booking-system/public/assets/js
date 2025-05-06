@@ -1,0 +1,37 @@
+tattoo-booking-system
+├── app
+│   ├── controllers
+│   │   ├── AdminController.php
+│   │   ├── AppointmentController.php
+│   │   ├── AuthController.php
+│   │   └── HomeController.php
+│   ├── models
+│   │   ├── Admin.php
+│   │   ├── Appointment.php
+│   │   └── User.php
+│   └── views
+│       ├── admin
+│       │   ├── dashboard.php
+│       │   └── appointments.php
+│       ├── appointments
+│       │   ├── create.php
+│       │   └── index.php
+│       ├── auth
+│       │   ├── login.php
+│       │   └── register.php
+│       ├── partials
+│       │   ├── header.php
+│       │   └── footer.php
+│       └── home.php
+├── public
+│   ├── index.php
+│   ├── .htaccess
+│   └── assets
+│       ├── css
+│       └── js
+├── config
+│   └── database.php
+├── core
+│   ├── Router.php
+│   └── Database.php
+└── README.md
