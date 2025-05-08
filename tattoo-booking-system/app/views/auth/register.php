@@ -48,9 +48,11 @@
                         </label>
                         <div class="mt-1">
                             <input id="email" name="email" type="email" autocomplete="email" required
+                                onblur="checkEmailAvailability(this.value)"
                                 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-accent focus:border-accent sm:text-sm"
                                 placeholder="you@example.com">
                         </div>
+                        <div id="email-status" class="mt-1 text-sm"></div>
                         <?php if (isset($errors['email'])): ?>
                             <p class="mt-1 text-sm text-red-600"><?php echo $errors['email']; ?></p>
                         <?php endif; ?>
@@ -78,6 +80,25 @@
                             <input id="password" name="password" type="password" required
                                 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-accent focus:border-accent sm:text-sm">
                         </div>
+                        <div class="mt-2 hidden" id="password-requirements">
+                            <div class="text-sm space-y-1">
+                                <div class="flex items-center">
+                                    <span id="length-check" class="text-red-500">✗ At least 8 characters</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span id="uppercase-check" class="text-red-500">✗ Contains uppercase letter</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span id="lowercase-check" class="text-red-500">✗ Contains lowercase letter</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span id="number-check" class="text-red-500">✗ Contains number</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span id="special-check" class="text-red-500">✗ Contains special character (!@#$%^&*)</span>
+                                </div>
+                            </div>
+                        </div>
                         <?php if (isset($errors['password'])): ?>
                             <p class="mt-1 text-sm text-red-600"><?php echo $errors['password']; ?></p>
                         <?php endif; ?>
@@ -90,6 +111,9 @@
                         <div class="mt-1">
                             <input id="password_confirmation" name="password_confirmation" type="password" required
                                 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-accent focus:border-accent sm:text-sm">
+                        </div>
+                        <div class="mt-1 hidden" id="password-match-status">
+                            <span class="text-sm text-red-500">Passwords do not match</span>
                         </div>
                         <?php if (isset($errors['password_confirmation'])): ?>
                             <p class="mt-1 text-sm text-red-600"><?php echo $errors['password_confirmation']; ?></p>
@@ -121,6 +145,108 @@
     </div>
 
     <?php include_once '../app/views/partials/footer.php'; ?>
+
+    <script>
+        function checkEmailAvailability(email) {
+            if (!email) return;
+
+            const statusDiv = document.getElementById('email-status');
+            const submitButton = document.querySelector('button[type="submit"]');
+
+            // Show loading state
+            statusDiv.innerHTML = '<span class="text-gray-500">Checking availability...</span>';
+
+            fetch('/check-email?email=' + encodeURIComponent(email))
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        statusDiv.innerHTML = '<span class="text-red-600">This email is already registered</span>';
+                        submitButton.disabled = true;
+                        submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        statusDiv.innerHTML = '<span class="text-green-600">Email is available</span>';
+                        submitButton.disabled = false;
+                        submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    statusDiv.innerHTML = '<span class="text-red-600">Error checking email availability</span>';
+                });
+        }
+
+        document.getElementById('password').addEventListener('focus', function() {
+            document.getElementById('password-requirements').classList.remove('hidden');
+        });
+
+        document.getElementById('password').addEventListener('input', function(e) {
+            const password = e.target.value;
+            const submitButton = document.querySelector('button[type="submit"]');
+
+            // Password requirements
+            const requirements = {
+                length: password.length >= 8,
+                uppercase: /[A-Z]/.test(password),
+                lowercase: /[a-z]/.test(password),
+                number: /[0-9]/.test(password),
+                special: /[!@#$%^&*]/.test(password)
+            };
+
+            // Update requirement status
+            Object.keys(requirements).forEach(requirement => {
+                const element = document.getElementById(`${requirement}-check`);
+                if (requirements[requirement]) {
+                    element.classList.remove('text-red-500');
+                    element.classList.add('text-green-500');
+                    element.innerHTML = '✓ ' + element.textContent.replace('✗ ', '').replace('✓ ', '');
+                } else {
+                    element.classList.remove('text-green-500');
+                    element.classList.add('text-red-500');
+                    element.innerHTML = '✗ ' + element.textContent.replace('✗ ', '').replace('✓ ', '');
+                }
+            });
+
+            checkPasswordMatch();
+        });
+
+        document.getElementById('password_confirmation').addEventListener('input', checkPasswordMatch);
+
+        function checkPasswordMatch() {
+            const password = document.getElementById('password').value;
+            const confirmation = document.getElementById('password_confirmation').value;
+            const submitButton = document.querySelector('button[type="submit"]');
+            const matchStatus = document.getElementById('password-match-status');
+
+            if (confirmation.length > 0) {
+                matchStatus.classList.remove('hidden');
+
+                if (password === confirmation) {
+                    matchStatus.children[0].classList.remove('text-red-500');
+                    matchStatus.children[0].classList.add('text-green-500');
+                    matchStatus.children[0].innerHTML = '✓ Passwords match';
+                } else {
+                    matchStatus.children[0].classList.remove('text-green-500');
+                    matchStatus.children[0].classList.add('text-red-500');
+                    matchStatus.children[0].innerHTML = '✗ Passwords do not match';
+                }
+            } else {
+                matchStatus.classList.add('hidden');
+            }
+
+            // Check all requirements
+            const allRequirementsMet = [
+                    ...document.querySelectorAll('#password-requirements span')
+                ].every(span => span.classList.contains('text-green-500')) &&
+                password === confirmation && confirmation.length > 0;
+
+            submitButton.disabled = !allRequirementsMet;
+            if (!allRequirementsMet) {
+                submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+    </script>
 </body>
 
 </html>

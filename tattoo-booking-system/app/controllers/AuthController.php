@@ -36,6 +36,13 @@ class AuthController extends Controller
             return $this->view('auth/register', ['errors' => $errors]);
         }
 
+        // Check if email already exists
+        if ($this->user->findByEmail($_POST['email'])) {
+            session_start();
+            $_SESSION['error'] = 'This email is already registered. Please use a different email or login.';
+            return $this->redirect('/');
+        }
+
         // Create user
         try {
             $result = $this->user->create([
@@ -58,6 +65,17 @@ class AuthController extends Controller
                 $_SESSION['success'] = 'Registration successful! Please check your email to confirm your account.';
                 return $this->redirect('/login');
             }
+        } catch (\PDOException $e) {
+            // Handle database errors, including duplicate entries
+            if ($e->getCode() == 23000) { // MySQL duplicate entry error code
+                session_start();
+                $_SESSION['error'] = 'This email is already registered. Please use a different email or login.';
+                return $this->redirect('/');
+            }
+
+            return $this->view('auth/register', [
+                'errors' => ['general' => 'Registration failed. Please try again.']
+            ]);
         } catch (\Exception $e) {
             return $this->view('auth/register', [
                 'errors' => ['general' => 'Registration failed. Please try again.']
@@ -88,6 +106,22 @@ class AuthController extends Controller
         }
 
         return $this->redirect('/login');
+    }
+
+    public function checkEmail()
+    {
+        $email = $_GET['email'] ?? '';
+
+        if (empty($email)) {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Email is required']);
+            return;
+        }
+
+        $exists = $this->user->findByEmail($email);
+
+        header('Content-Type: application/json');
+        echo json_encode(['exists' => (bool)$exists]);
     }
 
     private function validateRegistration($data)

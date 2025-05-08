@@ -1,6 +1,6 @@
 <?php include_once 'partials/header.php'; ?>
-
 <?php include_once 'partials/navbar.php'; ?>
+<?php include_once 'partials/messages.php'; ?>
 
 <!-- Hero Section -->
 <div class="relative bg-gray-900 overflow-hidden">
