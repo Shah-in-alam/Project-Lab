@@ -4,7 +4,7 @@
             <!-- Logo Section -->
             <div class="flex-shrink-0 flex items-center">
                 <a href="/" class="flex items-center">
-                    <img class="h-8 w-auto" src="" alt="Tatu Logo">
+                    <img class="h-12 w-auto rounded-lg" src="/assets/images/tatulogo.jpg" alt="Tatu Logo">
                     <span class="ml-2 text-xl font-bold text-gray-800 dark:text-white">Tatu</span>
                 </a>
             </div>
