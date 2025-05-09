@@ -13,10 +13,10 @@ class User
 
     public function create($data)
     {
-        $token = bin2hex(random_bytes(50));
-
-        $sql = "INSERT INTO users (name, email, password_hash, location, confirmation_token) 
-                VALUES (:name, :email, :password_hash, :location, :token)";
+        $token = bin2hex(random_bytes(32)); // Generate confirmation token
+        
+        $sql = "INSERT INTO users (name, email, password_hash, location, is_verified, confirmation_token) 
+                VALUES (:name, :email, :password, :location, :is_verified, :token)";
 
         try {
             $stmt = $this->db->getConnection()->prepare($sql);
@@ -24,12 +24,16 @@ class User
             $stmt->execute([
                 ':name' => $data['name'],
                 ':email' => $data['email'],
-                ':password_hash' => password_hash($data['password'], PASSWORD_DEFAULT),
+                ':password' => password_hash($data['password'], PASSWORD_DEFAULT),
                 ':location' => $data['location'] ?? null,
+                ':is_verified' => false,
                 ':token' => $token
             ]);
 
-            return ['id' => $this->db->getConnection()->lastInsertId(), 'token' => $token];
+            return [
+                'id' => $this->db->getConnection()->lastInsertId(),
+                'token' => $token
+            ];
         } catch (\PDOException $e) {
             error_log($e->getMessage());
             return false;
@@ -44,15 +48,7 @@ class User
 
     public function verifyEmail($token)
     {
-        $sql = "UPDATE users SET email_confirmed = TRUE, confirmation_token = NULL 
-                WHERE confirmation_token = :token";
-
-        try {
-            $stmt = $this->db->getConnection()->prepare($sql);
-            return $stmt->execute([':token' => $token]);
-        } catch (\PDOException $e) {
-            error_log($e->getMessage());
-            return false;
-        }
+        $sql = "UPDATE users SET is_verified = TRUE, email_confirmed = TRUE WHERE confirmation_token = :token";
+        return $this->db->query($sql, ['token' => $token])->rowCount() > 0;
     }
 }

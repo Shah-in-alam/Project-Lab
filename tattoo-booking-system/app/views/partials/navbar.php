@@ -2,7 +2,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <!-- Logo Section -->
-            <div class="flex-shrink-0 flex items-center">
+            <div class="flex-shrink-0 flex items-center <?php echo isset($customNavbarClass) ? $customNavbarClass : ''; ?>">
                 <a href="/" class="flex items-center">
                     <img class="h-12 w-auto rounded-lg" src="/assets/images/tatulogo.jpg" alt="Tatu Logo">
                     <span class="ml-2 text-xl font-bold text-gray-800 dark:text-white">Tatu</span>

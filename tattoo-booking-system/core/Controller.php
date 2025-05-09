@@ -7,7 +7,12 @@ class Controller
     protected function view($name, $data = [])
     {
         extract($data);
-        require "../app/views/{$name}.php";
+        $viewPath = __DIR__ . "/../app/views/{$name}.php";
+        if (file_exists($viewPath)) {
+            require $viewPath;
+        } else {
+            throw new \Exception("View {$name} not found");
+        }
     }
 
     protected function redirect($url)

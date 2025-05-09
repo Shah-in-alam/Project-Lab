@@ -23,6 +23,7 @@ $router->get('/appointments', 'AppointmentController@index');
 $router->get('/appointments/create', 'AppointmentController@create');
 $router->get('/admin/dashboard', 'AdminController@dashboard');
 $router->get('/admin/appointments', 'AdminController@appointments');
+$router->get('/users', 'UserController@index');
 
 // Dispatch the request
 $router->dispatch();

@@ -8,7 +8,7 @@ $router = new Router();
 $router->get('/login', 'AuthController@showLogin');
 $router->post('/auth/login', 'AuthController@login');
 $router->get('/register', 'AuthController@showRegister');
-$router->post('/register', 'AuthController@register');
+$router->post('/register', 'AuthController@store');
 $router->get('/auth/logout', 'AuthController@logout');
 
 // Home Route

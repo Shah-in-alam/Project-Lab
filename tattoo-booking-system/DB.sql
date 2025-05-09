@@ -4,6 +4,12 @@ CREATE TABLE roles (
     name VARCHAR(50) UNIQUE NOT NULL -- 'Admin', 'User', 'Artist'
 );
 
+-- Insert default roles
+INSERT INTO roles (id, name) VALUES 
+(1, 'Admin'),
+(2, 'User'),
+(3, 'Artist');
+
 -- Users
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
@@ -11,7 +17,7 @@ CREATE TABLE users (
     password_hash TEXT NOT NULL,
     name VARCHAR(255),
     location VARCHAR(255),
-    role_id INT REFERENCES roles(id),
+    role_id INT NULL REFERENCES roles(id),
     is_verified BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

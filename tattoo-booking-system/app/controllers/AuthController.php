@@ -17,59 +17,93 @@ class AuthController extends Controller
         $this->emailService = new EmailService();
     }
 
-    public function showLogin()
-    {
-        require_once __DIR__ . '/../views/auth/login.php';
-    }
-
-    public function showRegister()
-    {
-        require_once __DIR__ . '/../views/auth/register.php';
-    }
-
     public function login()
     {
-        // Login logic will be implemented here
-        $email = $_POST['email'] ?? '';
-        $password = $_POST['password'] ?? '';
-
-        // TODO: Implement actual login logic
-        if ($email && $password) {
-            // Redirect to home page after successful login
-            header('Location: /');
-            exit;
-        }
-
-        // If login fails, show error
-        $error = "Invalid email or password";
-        require_once __DIR__ . '/../views/auth/login.php';
+        return $this->view('auth/login');
     }
 
     public function register()
     {
-        // Registration logic will be implemented here
-        $name = $_POST['name'] ?? '';
-        $email = $_POST['email'] ?? '';
-        $password = $_POST['password'] ?? '';
+        return $this->view('auth/register');
+    }
 
-        // TODO: Implement actual registration logic
-        if ($name && $email && $password) {
-            // Redirect to login page after successful registration
-            header('Location: /login');
-            exit;
+    public function store()
+    {
+        // Start session at the beginning
+        session_start();
+        
+        // Log the POST data
+        error_log('Registration attempt with data: ' . print_r($_POST, true));
+
+        // Validate input
+        $errors = $this->validateRegistration($_POST);
+
+        if (!empty($errors)) {
+            error_log('Validation errors: ' . print_r($errors, true));
+            return $this->view('auth/register', ['errors' => $errors]);
         }
 
-        // If registration fails, show error
-        $error = "Registration failed. Please try again.";
-        require_once __DIR__ . '/../views/auth/register.php';
+        // Check if email already exists
+        if ($this->user->findByEmail($_POST['email'])) {
+            error_log('Email already exists: ' . $_POST['email']);
+            $_SESSION['error'] = 'This email is already registered. Please use a different email or login.';
+            return $this->redirect('/');
+        }
+
+        // Create user
+        try {
+            error_log('Attempting to create user...');
+            $result = $this->user->create([
+                'email' => $_POST['email'],
+                'password' => $_POST['password'],
+                'name' => $_POST['name'],
+                'location' => $_POST['location']
+            ]);
+
+            error_log('User creation result: ' . print_r($result, true));
+
+            if ($result) {
+                // Send confirmation email
+                try {
+                    $this->emailService->sendConfirmationEmail(
+                        $_POST['email'],
+                        $_POST['name'],
+                        $result['token']
+                    );
+                    error_log('Confirmation email sent successfully');
+                } catch (\Exception $e) {
+                    error_log('Failed to send confirmation email: ' . $e->getMessage());
+                }
+
+                $_SESSION['success'] = 'Registration successful! Please check your email to confirm your account.';
+                error_log('Registration successful, redirecting to login');
+                return $this->redirect('/login');
+            } else {
+                error_log('User creation failed - no result returned');
+                $_SESSION['error'] = 'Registration failed. Please try again.';
+                return $this->redirect('/register');
+            }
+        } catch (\PDOException $e) {
+            error_log('Database error during registration: ' . $e->getMessage());
+            if ($e->getCode() == 23000) {
+                $_SESSION['error'] = 'This email is already registered. Please use a different email or login.';
+                return $this->redirect('/');
+            }
+
+            $_SESSION['error'] = 'Registration failed. Please try again.';
+            return $this->redirect('/register');
+        } catch (\Exception $e) {
+            error_log('General error during registration: ' . $e->getMessage());
+            $_SESSION['error'] = 'Registration failed. Please try again.';
+            return $this->redirect('/register');
+        }
     }
 
     public function logout()
     {
-        // TODO: Implement logout logic
+        session_start();
         session_destroy();
-        header('Location: /login');
-        exit;
+        return $this->redirect('/');
     }
 
     public function verifyEmail()
