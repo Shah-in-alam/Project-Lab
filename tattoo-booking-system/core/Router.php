@@ -21,25 +21,40 @@ class Router
         $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         $method = $_SERVER['REQUEST_METHOD'];
 
-        if (array_key_exists($uri, $this->routes[$method] ?? [])) {
-            $controller = $this->routes[$method][$uri];
-            return $this->callController($controller);
+        // Check if route exists
+        if (isset($this->routes[$method][$uri])) {
+            return $this->callController($this->routes[$method][$uri]);
         }
 
-        header("HTTP/1.0 404 Not Found");
-        require '../app/views/404.php';
+        // Handle 404
+        if (file_exists(__DIR__ . '/../app/views/404.php')) {
+            require __DIR__ . '/../app/views/404.php';
+        } else {
+            echo "404 - Page Not Found";
+        }
     }
 
     protected function callController($controller)
     {
+        // Split controller and method
         list($controller, $method) = explode('@', $controller);
-        $controllerClass = "App\\Controllers\\{$controller}";
 
-        if (class_exists($controllerClass)) {
-            $controllerInstance = new $controllerClass();
-            return $controllerInstance->$method();
+        // Add namespace
+        $controller = "App\\Controllers\\{$controller}";
+
+        if (class_exists($controller)) {
+            $controllerInstance = new $controller();
+
+            if (method_exists($controllerInstance, $method)) {
+                return $controllerInstance->$method();
+            }
         }
 
-        throw new \Exception("Controller not found: {$controller}");
+        // If controller or method doesn't exist, show 404
+        if (file_exists(__DIR__ . '/../app/views/404.php')) {
+            require __DIR__ . '/../app/views/404.php';
+        } else {
+            echo "404 - Page Not Found";
+        }
     }
 }

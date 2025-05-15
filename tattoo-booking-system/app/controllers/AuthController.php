@@ -98,14 +98,28 @@ class AuthController extends Controller
             return $this->redirect('/login');
         }
 
-        if ($this->user->verifyEmail($token)) {
+        $user = $this->user->verifyEmail($token);
+
+        if ($user) {
+            // Start session and set user data
             session_start();
-            $_SESSION['success'] = 'Email verified successfully! You can now log in.';
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_name'] = $user['name'];
+            $_SESSION['user_role'] = $user['role_id'];
+            $_SESSION['success'] = 'Email verified successfully! Welcome to your account.';
+
+            // Redirect based on role
+            if ($user['role_id'] === 1) { // Admin
+                return $this->redirect('/admin/dashboard');
+            } else if ($user['role_id'] === 3) { // Artist
+                return $this->redirect('/artist/dashboard');
+            } else { // Regular user
+                return $this->redirect('/dashboard');
+            }
         } else {
             $_SESSION['error'] = 'Invalid or expired verification link.';
+            return $this->redirect('/login');
         }
-
-        return $this->redirect('/login');
     }
 
     public function checkEmail()
@@ -153,5 +167,49 @@ class AuthController extends Controller
         }
 
         return $errors;
+    }
+
+    // Add this method to your AuthController class
+
+    public function authenticate()
+    {
+        $email = $_POST['email'] ?? '';
+        $password = $_POST['password'] ?? '';
+
+        if (empty($email) || empty($password)) {
+            $_SESSION['error'] = 'Email and password are required';
+            return $this->redirect('/login');
+        }
+
+        $user = $this->user->findByEmail($email);
+
+        if (!$user || !password_verify($password, $user['password_hash'])) {
+            $_SESSION['error'] = 'Invalid email or password';
+            return $this->redirect('/login');
+        }
+
+        if (!$user['email_confirmed']) {
+            $_SESSION['error'] = 'Please verify your email before logging in';
+            return $this->redirect('/login');
+        }
+
+        // Start session and set user data
+        session_start();
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['user_name'] = $user['name'];
+        $_SESSION['user_role'] = $user['role_id'];
+        $_SESSION['is_verified'] = $user['is_verified'];
+        $_SESSION['location'] = $user['location'];
+        $_SESSION['success'] = 'Welcome back, ' . $user['name'] . '!';
+
+
+        // Redirect based on role
+        if ($user['role_id'] === 1) { // Admin
+            return $this->redirect('/admin/dashboard');
+        } else if ($user['role_id'] === 3) { // Artist
+            return $this->redirect('/artist/dashboard');
+        } else { // Regular user
+            return $this->redirect('/');
+        }
     }
 }
