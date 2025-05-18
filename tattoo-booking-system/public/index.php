@@ -24,6 +24,7 @@ $router->get('/appointments/create', 'AppointmentController@create');
 $router->get('/admin/dashboard', 'AdminController@dashboard');
 $router->get('/admin/appointments', 'AdminController@appointments');
 $router->get('/users', 'UserController@index');
+$router->get('/search', 'SearchController@index');
 
 // Dispatch the request
 $router->dispatch();
