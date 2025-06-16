@@ -1,3 +1,11 @@
+<?php
+if (!session_id()) {
+    session_start();
+}
+
+// Debug session data
+error_log('Current session data: ' . print_r($_SESSION, true));
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -26,11 +34,30 @@
 
     <!-- Alpine.js for interactions -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
 </head>
 
 <?php
 // Check if the user is logged in and get their role
-session_start();
+// session_start();
+
+// session_start();
+
+// var_dump($_SESSION);
+// Check if session is already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+
+
+
 $userRole = $_SESSION['user_role'] ?? null;
 $userAvatar = $_SESSION['user_avatar'] ?? null;
 ?>

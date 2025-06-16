@@ -4,7 +4,12 @@ namespace Core;
 
 class Router
 {
-    protected $routes = [];
+    protected $routes = [
+        'GET' => [],
+        'POST' => [],
+        'PUT' => [],
+        'DELETE' => []
+    ];
 
     public function get($uri, $controller)
     {
@@ -16,48 +21,75 @@ class Router
         $this->routes['POST'][$uri] = $controller;
     }
 
-    public function dispatch()
+    public function put($uri, $controller)
     {
-        try {
-            $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-            $method = $_SERVER['REQUEST_METHOD'];
-
-            if (array_key_exists($uri, $this->routes[$method] ?? [])) {
-                $controller = $this->routes[$method][$uri];
-                return $this->callController($controller);
-            }
-
-            // If no route matches, show 404
-            header("HTTP/1.0 404 Not Found");
-            $viewPath = __DIR__ . '/../app/views/404.php';
-            if (file_exists($viewPath)) {
-                require $viewPath;
-            } else {
-                echo "404 - Page Not Found";
-            }
-        } catch (\Exception $e) {
-            // Log the error
-            error_log($e->getMessage());
-            
-            // Show error page
-            header("HTTP/1.0 500 Internal Server Error");
-            echo "An error occurred. Please try again later.";
-        }
+        $this->routes['PUT'][$uri] = $controller;
     }
 
-    protected function callController($controller)
+    public function delete($uri, $controller)
     {
-        list($controller, $method) = explode('@', $controller);
-        $controllerClass = "App\\Controllers\\{$controller}";
+        $this->routes['DELETE'][$uri] = $controller;
+    }
 
-        if (class_exists($controllerClass)) {
-            $controllerInstance = new $controllerClass();
-            if (method_exists($controllerInstance, $method)) {
-                return $controllerInstance->$method();
+    public function dispatch()
+    {
+        $uri = $this->getUri();
+        $method = $_SERVER['REQUEST_METHOD'];
+
+        // Check for matching route with dynamic parameters
+        foreach ($this->routes[$method] as $route => $handler) {
+            $pattern = $this->convertRouteToRegex($route);
+            if (preg_match($pattern, $uri, $matches)) {
+                array_shift($matches); // Remove the full match
+
+                // Get controller and action
+                if (is_array($handler)) {
+                    $controller = new $handler[0]();
+                    $action = $handler[1];
+                } else {
+                    list($controller, $action) = explode('@', $handler);
+                    $controller = "App\\Controllers\\$controller";
+                    $controller = new $controller();
+                }
+
+                // Call the action with matched parameters
+                return call_user_func_array([$controller, $action], $matches);
             }
-            throw new \Exception("Method {$method} not found in controller {$controller}");
         }
 
-        throw new \Exception("Controller not found: {$controller}");
+        throw new \Exception('No route defined for this URI.');
+    }
+
+    private function convertRouteToRegex($route)
+    {
+        // Convert route parameters to regex pattern
+        $pattern = preg_replace('/\{([a-zA-Z0-9_]+)\}/', '([^/]+)', $route);
+        return '@^' . $pattern . '$@D';
+    }
+
+    protected function getUri()
+    {
+        $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        return $uri === '' ? '/' : $uri;
+    }
+
+    protected function getMethod()
+    {
+        $method = $_POST['_method'] ?? $_SERVER['REQUEST_METHOD'];
+        return strtoupper($method);
+    }
+
+    protected function callAction($controller, $action)
+    {
+        $controller = "App\\Controllers\\{$controller}";
+        $controller = new $controller();
+
+        if (!method_exists($controller, $action)) {
+            throw new \Exception(
+                "{$controller} does not respond to the {$action} action."
+            );
+        }
+
+        return $controller->$action();
     }
 }

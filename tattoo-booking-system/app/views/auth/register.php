@@ -9,45 +9,85 @@
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
+
         @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
+
         @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
+
         .animate-fade-in {
             animation: fadeIn 0.5s ease-out;
         }
+
         .animate-slide-up {
             animation: slideUp 0.5s ease-out;
         }
+
         .animated-bg {
             background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
             background-size: 400% 400%;
             animation: gradientBG 15s ease infinite;
         }
-        .main-content {
-            min-height: calc(100vh - 64px - 400px); /* viewport height - navbar height - footer height */
+
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
+
+        .main-content {
+            flex: 1 0 auto;
+        }
+
+        footer {
+            flex-shrink: 0;
+        }
+
         /* Custom navbar styles for register page */
         .navbar-logo {
             margin-left: -1rem !important;
             padding-left: 0 !important;
         }
+
         .navbar-logo img {
             height: 2.5rem !important;
             width: auto !important;
         }
+
         .navbar-logo span {
             font-size: 1.25rem !important;
             font-weight: 700 !important;
         }
+
         @media (max-width: 640px) {
             .navbar-logo {
                 margin-left: 0 !important;
@@ -56,11 +96,11 @@
     </style>
 </head>
 
-<body class="animated-bg flex flex-col min-h-screen">
-    <?php 
+<body class="animated-bg">
+    <?php
     // Add custom class to navbar logo
     $customNavbarClass = 'navbar-logo';
-    include_once '../app/views/partials/navbar.php'; 
+    include_once '../app/views/partials/navbar.php';
     ?>
 
     <div class="main-content flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animate-fade-in">
@@ -185,7 +225,9 @@
         </div>
     </div>
 
-    <?php include_once '../app/views/partials/footer.php'; ?>
+    <footer class="w-full">
+        <?php include_once '../app/views/partials/footer.php'; ?>
+    </footer>
 
     <script>
         // Email availability check

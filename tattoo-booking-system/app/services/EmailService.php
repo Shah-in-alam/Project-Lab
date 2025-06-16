@@ -14,28 +14,44 @@ class EmailService
     {
         $this->mailer = new PHPMailer(true);
 
-        // Configure PHPMailer using config values
-        $this->mailer->isSMTP();
-        $this->mailer->Host = SMTP_HOST;          // Remove backslash
-        $this->mailer->SMTPAuth = true;
-        $this->mailer->Username = SMTP_USERNAME;   // Remove backslash
-        $this->mailer->Password = SMTP_PASSWORD;   // Remove backslash
-        $this->mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $this->mailer->Port = SMTP_PORT;          // Remove backslash
+        try {
+            // Server settings
+            $this->mailer->isSMTP();
+            $this->mailer->Host = $_ENV['SMTP_HOST'];
+            $this->mailer->SMTPAuth = true;
+            $this->mailer->Username = $_ENV['SMTP_USER'];
+            $this->mailer->Password = $_ENV['SMTP_PASS'];
+            $this->mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $this->mailer->Port = $_ENV['SMTP_PORT'];
+
+            // Debug settings (temporarily enable for troubleshooting)
+            $this->mailer->SMTPDebug = SMTP::DEBUG_SERVER;
+            $this->mailer->Debugoutput = function ($str, $level) {
+                error_log("SMTP Debug: $str");
+            };
+        } catch (Exception $e) {
+            error_log("Mailer configuration error: " . $e->getMessage());
+            throw $e;
+        }
     }
 
     public function sendConfirmationEmail($email, $name, $token)
     {
         try {
-            $this->mailer->setFrom(APP_EMAIL, APP_NAME);     // Remove backslash
+            // Clear any previous recipients
+            $this->mailer->clearAddresses();
+            $this->mailer->clearReplyTos();
+
+            // Set sender
+            $this->mailer->setFrom($_ENV['SMTP_FROM'], $_ENV['SMTP_FROM_NAME']);
             $this->mailer->addAddress($email, $name);
             $this->mailer->isHTML(true);
 
-            $confirmationLink = APP_URL . "/verify-email?token=" . $token;  // Remove backslash
+            $confirmationLink = $_ENV['APP_URL'] . "/verify-email?token=" . $token;
 
-            $this->mailer->Subject = 'Confirm Your Email - ' . APP_NAME;    // Remove backslash
+            $this->mailer->Subject = 'Confirm Your Email - ' . $_ENV['APP_NAME'];
             $this->mailer->Body = "
-                <h2>Welcome to " . APP_NAME . "!</h2>
+                <h2>Welcome to " . $_ENV['APP_NAME'] . "!</h2>
                 <p>Hi {$name},</p>
                 <p>Please click the link below to confirm your email address:</p>
                 <p><a href='{$confirmationLink}'>Confirm Email</a></p>
@@ -45,7 +61,7 @@ class EmailService
             return $this->mailer->send();
         } catch (Exception $e) {
             error_log("Email sending failed: " . $this->mailer->ErrorInfo);
-            return false;
+            throw $e;
         }
     }
 }

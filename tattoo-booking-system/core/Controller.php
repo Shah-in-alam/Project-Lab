@@ -2,22 +2,55 @@
 
 namespace Core;
 
+use PDO;
+
 class Controller
 {
-    protected function view($name, $data = [])
+    protected $db;
+
+    public function __construct()
     {
-        extract($data);
-        $viewPath = __DIR__ . "/../app/views/{$name}.php";
-        if (file_exists($viewPath)) {
-            require $viewPath;
-        } else {
-            throw new \Exception("View {$name} not found");
+        try {
+            // Get database configuration
+            $config = require dirname(__DIR__) . '/config/database.php';
+
+            if (!is_array($config)) {
+                throw new \Exception('Invalid database configuration');
+            }
+
+            $dsn = sprintf(
+                "mysql:host=%s;dbname=%s;charset=utf8mb4",
+                $config['host'],
+                $config['database']
+            );
+
+            $this->db = new PDO(
+                $dsn,
+                $config['username'],
+                $config['password'],
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES => false
+                ]
+            );
+        } catch (\Exception $e) {
+            die('Connection failed: ' . $e->getMessage());
         }
     }
 
-    protected function redirect($url)
+    protected function view($view, $data = [])
     {
-        header("Location: {$url}");
+        // Extract data to make it available in view
+        extract($data);
+
+        // Include the view file
+        require_once "../app/views/{$view}.php";
+    }
+
+    protected function redirect($path)
+    {
+        header("Location: {$path}");
         exit();
     }
 }
