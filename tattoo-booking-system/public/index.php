@@ -26,5 +26,7 @@ $router->get('/admin/appointments', 'AdminController@appointments');
 $router->get('/users', 'UserController@index');
 $router->get('/search', 'SearchController@index');
 
+$router->get('/payment', 'PaymentController@show');
+
 // Dispatch the request
 $router->dispatch();
