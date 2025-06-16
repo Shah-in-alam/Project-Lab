@@ -72,5 +72,7 @@ $router->post('/posts/{id}/comments', ['App\Controllers\PostInteractionControlle
 $router->post('/posts/{id}/like', ['App\Controllers\PostInteractionController', 'toggleLike']);
 $router->get('/posts/{id}/like-status', ['App\Controllers\PostInteractionController', 'getLikeStatus']);
 
+$router->get('/payment', 'PaymentController@show');
+
 // Dispatch the request
 $router->dispatch();
